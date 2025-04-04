@@ -1,35 +1,44 @@
 #include <stdio.h>
 
-int main() {
-    char source[] = "Bonjour";
-    char destination[100];
-    char ajout[] = " le monde";
+void main() {
+    char chaine1[] = "Hello";
+    char chaine2[] = "World !";
+    int Length1 = 0;
+    int Length2 = 0;
 
-    // 1. Calculer la longueur
-    int longueur = 0;
-    while (source[longueur] != '\0') {
-        longueur++;
+    // Calcul de la longueur de chaine1
+    for (int i = 0; i < 1000; i++) {
+        if (chaine1[i] == '\0') {
+            Length1 = i;
+            break;
+        }
     }
-    printf("Longueur de source : %d\n", longueur);
 
-    // 2. Copier source → destination
-    int i = 0;
-    while (source[i] != '\0') {
-        destination[i] = source[i];
-        i++;
+    // Calcul de la longueur de chaine2
+    for (int i = 0; i < 1000; i++) {
+        if (chaine2[i] == '\0') {
+            Length2 = i;
+            break;
+        }
     }
-    destination[i] = '\0';
-    printf("Après copie : %s\n", destination);
 
-    // 3. Concaténer ajout → destination
-    int j = 0;
-    while (ajout[j] != '\0') {
-        destination[i] = ajout[j];
-        i++;
-        j++;
+    // Déclaration de la chaîne finale avec +1 pour le '\0'
+    char chaine_finale[Length1 + Length2 + 1];
+
+    // Copie de chaine1
+    for (int i = 0; i < Length1; i++) {
+        chaine_finale[i] = chaine1[i];
     }
-    destination[i] = '\0';
-    printf("Après concaténation : %s\n", destination);
 
-    return 0;
+    // Copie de chaine2 à la suite
+    for (int i = 0; i < Length2; i++) {
+        chaine_finale[Length1 + i] = chaine2[i];
+    }
+
+    // Ajout du caractère de fin
+    chaine_finale[Length1 + Length2] = '\0';
+
+    // Affichage de la chaîne finale
+    printf("%s\n", chaine_finale);
+
 }

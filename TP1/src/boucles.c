@@ -1,17 +1,20 @@
 #include <stdio.h>
 
 int main() {
-    int compteur = 5; // Tu peux modifier cette valeur entre 1 et 9
+    int cpt = 5;
 
-    if (compteur >= 10) {
-        printf("Erreur : le compteur doit être strictement inférieur à 10.\n");
+    if (cpt >= 10) {
+        printf("La valeur de compteur doit être strictement inférieure à 10.\n");
         return 1;
     }
 
-    // Affichage du triangle rectangle
-    for (int i = 1; i <= compteur; i++) {
+    for (int i = 1; i <= cpt; i++) {
         for (int j = 1; j <= i; j++) {
-            printf("* ");
+            if (i == 1 || i == cpt || j == 1 || j == i) {
+                printf("* ");
+            } else {
+                printf("# ");
+            }
         }
         printf("\n");
     }

@@ -1,8 +1,8 @@
 #include <stdio.h>
 
 int main() {
-    unsigned int d = 0x00F00010; // Valeur à tester (modifie-la si besoin)
-    int taille = sizeof(d) * 8;  // Nombre total de bits (ex: 32 bits sur la plupart des machines)
+    unsigned int d = 0x00F00010; 
+    int taille = sizeof(d) * 8;  
 
     // Position des bits à tester (en partant de la gauche)
     int pos4gauche = 4;

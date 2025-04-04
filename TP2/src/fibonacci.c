@@ -1,7 +1,12 @@
 #include <stdio.h>
-int main(){int n=7,a=0,b=1,c;
-printf("%d",a);
-for(int i=1;i<=n;i++){
-printf(", %d",b);
-c=a+b;a=b;b=c;}
-return 0;}
+
+void main() {
+    int n = 7;
+    int val[] = {0,1};
+    printf("%d %d ", val[0], val[1]);
+    for(int i = 2; i < n; i++) {
+        printf("%d ", val[0]+val[1]);
+        val[1]+=val[0];
+        val[0] = val[1]-val[0];     
+    }
+}

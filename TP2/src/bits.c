@@ -1,27 +1,14 @@
 #include <stdio.h>
 
 int main() {
-    unsigned int d = 0x00F00010; 
-    int taille = sizeof(d) * 8;  
+    unsigned int c = 0x00100008; 
 
-    // Position des bits à tester (en partant de la gauche)
-    int pos4gauche = 4;
-    int pos20gauche = 20;
+  
+    int a = (c >> (32 - 4)) & 1;
+    int b = (c >> (32 - 20)) & 1;
 
-    // Conversion en positions depuis la droite (bit 0 à droite)
-    int pos4droite = taille - pos4gauche;
-    int pos20droite = taille - pos20gauche;
-
-    // Masques pour extraire les bits
-    int bit4 = (d >> pos4droite) & 1;
-    int bit20 = (d >> pos20droite) & 1;
-
-    // Affichage du résultat
-    if (bit4 == 1 && bit20 == 1) {
-        printf("1\n");
-    } else {
-        printf("0\n");
-    }
-
+  
+    printf("%d\n", (a & b));
+    
     return 0;
 }

@@ -16,21 +16,24 @@ int main() {
         Length2++;
     }
 
-    // Tableau suffisamment grand, la taille doit être connue à la compilation
-    char chaine_finale[100]; // On utilise une taille fixe ici
+    // Espace + 1 caractère nul → +2
+    char chaine_finale[100];
 
     // Copie de chaine1
     for (int i = 0; i < Length1; i++) {
         chaine_finale[i] = chaine1[i];
     }
 
-    // Copie de chaine2 à la suite
+    // Ajout de l'espace après chaine1
+    chaine_finale[Length1] = ' ';
+
+    // Copie de chaine2 à la suite de l'espace
     for (int i = 0; i < Length2; i++) {
-        chaine_finale[Length1 + i] = chaine2[i];
+        chaine_finale[Length1 + 1 + i] = chaine2[i];
     }
 
     // Ajout du caractère de fin
-    chaine_finale[Length1 + Length2] = '\0';
+    chaine_finale[Length1 + 1 + Length2] = '\0';
 
     // Affichage de la chaîne finale
     printf("%s\n", chaine_finale);

@@ -16,110 +16,99 @@
 #include <sys/socket.h>
 #include <sys/epoll.h>
 #include <unistd.h>
+#include <ctype.h>
 
 #include "serveur.h"
 
-int socketfd; // Déclaration globale de socketfd
+int socketfd;
 
 /**
- * Cette fonction envoie un message (*data) au client (client_socket_fd)
- * @param client_socket_fd : Le descripteur de socket du client.
- * @param sdata : Le message à envoyer.
- * @return EXIT_SUCCESS en cas de succès, EXIT_FAILURE en cas d'erreur.
+ * Fonction pour évaluer une expression simple de type "a+b", "a-b", "a*b", "a/b"
  */
-int renvoie_message(int client_socket_fd, char *data)
-{
-  int data_size = write(client_socket_fd, (void *)data, strlen(data));
+int evaluer_expression(const char *expr, int *resultat) {
+  int a = 0, b = 0;
+  char op = 0;
+  if (sscanf(expr, "%d%c%d", &a, &op, &b) == 3) {
+    switch (op) {
+      case '+': *resultat = a + b; return 1;
+      case '-': *resultat = a - b; return 1;
+      case '*': *resultat = a * b; return 1;
+      case '/':
+        if (b == 0) return -1; // division par zéro
+        *resultat = a / b;
+        return 1;
+      default: return 0; // opérateur invalide
+    }
+  }
+  return 0; // format invalide
+}
 
-  if (data_size < 0)
-  {
+/**
+ * Envoie un message au client
+ */
+int renvoie_message(int client_socket_fd, char *data) {
+  int data_size = write(client_socket_fd, (void *)data, strlen(data));
+  if (data_size < 0) {
     perror("Erreur d'écriture");
     return EXIT_FAILURE;
+  }
+  return EXIT_SUCCESS;
+}
+
+/**
+ * Traite les messages du client et renvoie une réponse
+ */
+int recois_envoie_message(int client_socket_fd, char *data) {
+  printf("Message reçu: %s\n", data);
+  char code[10], contenu[1024];
+
+  if (sscanf(data, "%9[^:]:%1023[^\n]", code, contenu) == 2) {
+    if (strcmp(code, "message") == 0) {
+      int resultat = 0;
+      int status = evaluer_expression(contenu, &resultat);
+
+      char reponse[1024];
+      if (status == 1) {
+        snprintf(reponse, sizeof(reponse), "résultat: %d", resultat);
+      } else if (status == -1) {
+        snprintf(reponse, sizeof(reponse), "Erreur: division par zéro");
+      } else {
+        snprintf(reponse, sizeof(reponse), "Erreur: expression invalide");
+      }
+
+      return renvoie_message(client_socket_fd, reponse);
+    }
   }
 
   return EXIT_SUCCESS;
 }
 
 /**
- * Cette fonction lit les données envoyées par le client,
- * et renvoie un message en réponse saisi par l'utilisateur.
- * @param client_socket_fd : Le descripteur de socket du client.
- * @param data : Le message.
- * @return EXIT_SUCCESS en cas de succès, EXIT_FAILURE en cas d'erreur.
+ * Gère Ctrl+C (SIGINT)
  */
-int recois_envoie_message(int client_socket_fd, char *data)
-{
-  printf("Message reçu: %s\n", data);
-
-  char reponse[1024];
-  printf("Tapez votre réponse au client : ");
-  fflush(stdout); // S'assurer que le message s'affiche avant l'entrée
-
-  if (fgets(reponse, sizeof(reponse), stdin) == NULL)
-  {
-    perror("Erreur de saisie");
-    return EXIT_FAILURE;
-  }
-
-  // Supprimer le saut de ligne (\n) ajouté par fgets
-  size_t len = strlen(reponse);
-  if (len > 0 && reponse[len - 1] == '\n')
-  {
-    reponse[len - 1] = '\0';
-  }
-
-  // Envoyer la réponse au client
-  return renvoie_message(client_socket_fd, reponse);
-}
-
-/**
- * Gestionnaire de signal pour Ctrl+C (SIGINT).
- * @param signal : Le signal capturé (doit être SIGINT pour Ctrl+C).
- */
-void gestionnaire_ctrl_c(int signal)
-{
+void gestionnaire_ctrl_c(int signal) {
   printf("\nSignal Ctrl+C capturé. Sortie du programme.\n");
-
-  // Fermer le socket si ouvert
-  if (socketfd != -1)
-  {
+  if (socketfd != -1) {
     close(socketfd);
   }
-
-  exit(0); // Quitter proprement le programme.
+  exit(0);
 }
 
 /**
- * Gère la communication avec un client spécifique.
- *
- * @param client_socket_fd Le descripteur de socket du client à gérer.
+ * Communication avec un client
  */
-void gerer_client(int client_socket_fd)
-{
+void gerer_client(int client_socket_fd) {
   char data[1024];
-
-  while (1)
-  {
-    // Réinitialisation des données
+  while (1) {
     memset(data, 0, sizeof(data));
-
-    // Lecture des données envoyées par le client
     int data_size = read(client_socket_fd, data, sizeof(data));
 
-    if (data_size <= 0)
-    {
-      // Erreur de réception ou déconnexion du client
-      if (data_size == 0)
-      {
-        // Le client a fermé la connexion proprement
+    if (data_size <= 0) {
+      if (data_size == 0) {
         printf("Client déconnecté.\n");
-      }
-      else
-      {
+      } else {
         perror("Erreur de réception");
       }
-
-      // Fermer le socket du client et sortir de la boucle de communication
       close(client_socket_fd);
       break;
     }
@@ -129,17 +118,15 @@ void gerer_client(int client_socket_fd)
 }
 
 /**
- * Point d’entrée du programme serveur.
+ * Point d'entrée principal
  */
-int main()
-{
+int main() {
   int bind_status;
   struct sockaddr_in server_addr;
   int option = 1;
 
   socketfd = socket(AF_INET, SOCK_STREAM, 0);
-  if (socketfd < 0)
-  {
+  if (socketfd < 0) {
     perror("Impossible d'ouvrir une socket");
     return -1;
   }
@@ -149,11 +136,10 @@ int main()
   memset(&server_addr, 0, sizeof(server_addr));
   server_addr.sin_family = AF_INET;
   server_addr.sin_port = htons(PORT);
-  server_addr.sin_addr.s_addr = INADDR_ANY;
+  server_addr.sin_addr.s_addr = inet_addr("10.0.30.5");
 
   bind_status = bind(socketfd, (struct sockaddr *)&server_addr, sizeof(server_addr));
-  if (bind_status < 0)
-  {
+  if (bind_status < 0) {
     perror("bind");
     return EXIT_FAILURE;
   }
@@ -167,29 +153,23 @@ int main()
   unsigned int client_addr_len = sizeof(client_addr);
   int client_socket_fd;
 
-  while (1)
-  {
+  while (1) {
     client_socket_fd = accept(socketfd, (struct sockaddr *)&client_addr, &client_addr_len);
-    if (client_socket_fd < 0)
-    {
+    if (client_socket_fd < 0) {
       perror("accept");
       continue;
     }
 
     pid_t child_pid = fork();
-    if (child_pid == 0)
-    {
+
+    if (child_pid == 0) {
       close(socketfd);
       gerer_client(client_socket_fd);
       exit(0);
-    }
-    else if (child_pid < 0)
-    {
+    } else if (child_pid < 0) {
       perror("fork");
       close(client_socket_fd);
-    }
-    else
-    {
+    } else {
       close(client_socket_fd);
     }
   }

@@ -49,18 +49,19 @@ int renvoie_message(int client_socket_fd, char *data)
  */
 int recois_envoie_message(int client_socket_fd, char *data)
 {
-  printf("Message reçu: %s\n", data);
-  char code[10];
-  if (sscanf(data, "%9s:", code) == 1) // Assurez-vous que le format est correct
-  {
-    if (strcmp(code, "message:") == 0)
-    {
-      return renvoie_message(client_socket_fd, data);
-    }
+  printf("Message reçu du client : %s\n", data);
+
+  char reponse[1024];
+  printf("Entrez un message à renvoyer au client : ");
+  fgets(reponse, sizeof(reponse), stdin);
+
+  // Supprimer le saut de ligne final s’il existe
+  size_t len = strlen(reponse);
+  if (len > 0 && reponse[len - 1] == '\n') {
+    reponse[len - 1] = '\0';
   }
 
-  return (EXIT_SUCCESS);
-}
+  return renvoie_message(client_socket_fd, reponse);
 
 /**
  * Gestionnaire de signal pour Ctrl+C (SIGINT).
@@ -90,33 +91,39 @@ void gerer_client(int client_socket_fd)
 
   while (1)
   {
-    // Réinitialisation des données
     memset(data, 0, sizeof(data));
 
-    // Lecture des données envoyées par le client
     int data_size = read(client_socket_fd, data, sizeof(data));
-
     if (data_size <= 0)
     {
-      // Erreur de réception ou déconnexion du client
       if (data_size == 0)
       {
-        // Le client a fermé la connexion proprement
         printf("Client déconnecté.\n");
       }
       else
       {
         perror("Erreur de réception");
       }
-
-      // Fermer le socket du client et sortir de la boucle de communication
       close(client_socket_fd);
-      break; // Sortir de la boucle de communication avec ce client
+      break;
     }
 
-    recois_envoie_message(client_socket_fd, data);
+    // Supprimer \n si présent
+    data[strcspn(data, "\n")] = 0;
+
+    if (strcmp(data, "exit") == 0)
+    {
+      printf("Client a quitté la session.\n");
+      close(client_socket_fd);
+      break;
+    }
+
+    // Répondre
+    if (recois_envoie_message(client_socket_fd, data) != EXIT_SUCCESS) {
+      break;
+    }
   }
-}
+
 
 /**
  * Configuration du serveur socket et attente de connexions.
